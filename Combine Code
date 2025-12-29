@@ -1,0 +1,200 @@
+import datetime
+
+# ==========================================
+# Node Class
+# Represents one transaction in the system
+# ==========================================
+class Node:
+    def __init__(self, amount, transaction_type):
+        self.amount = amount                    # Transaction amount
+        self.transaction_type = transaction_type  # Deposit or Withdrawal
+        self.date = datetime.datetime.now()     # Transaction date & time
+        self.next = None                        # Pointer to next node
+
+
+# ==========================================
+# Stack for Undo Operation
+# ==========================================
+undo_stack = []  # Stack to store latest transactions
+
+def is_stack_empty():
+    # Check whether the undo stack is empty
+    return len(undo_stack) == 0
+
+def push_to_undo_stack(node):
+    # Push the latest transaction node into the stack
+    undo_stack.append(node)
+
+def undo_latest_operation(head):
+    # Undo the most recent transaction
+    if is_stack_empty():
+        print("No transactions to undo!")
+        return head
+
+    # Remove the last transaction from stack
+    last_node = undo_stack.pop()
+    print(f"Undoing {last_node.transaction_type} of ${last_node.amount}")
+
+    # If only one node exists
+    if head == last_node:
+        return None
+
+    # Find the previous node and remove the last node
+    current = head
+    while current.next is not None and current.next != last_node:
+        current = current.next
+
+    if current.next == last_node:
+        current.next = None
+
+    return head
+
+
+# ==========================================
+# Linked List Operations
+# ==========================================
+def insertAtEnd(head, amount, transaction_type):
+    # Insert a new transaction at the end of linked list
+    newNode = Node(amount, transaction_type)
+
+    # If list is empty
+    if head is None:
+        return newNode
+
+    # Traverse to the last node
+    current = head
+    while current.next is not None:
+        current = current.next
+
+    current.next = newNode
+    return head
+
+def traverseList(head):
+    # Display all transaction records
+    if head is None:
+        print("No transaction yet")
+        return
+
+    current = head
+    while current is not None:
+        date_str = current.date.strftime("%Y-%m-%d %H:%M:%S")
+        print(f"Date: {date_str} | Type: {current.transaction_type} | Amount: ${current.amount}")
+        current = current.next
+
+def calculateBalance(head):
+    # Calculate current account balance
+    balance = 0
+    current = head
+
+    while current is not None:
+        if current.transaction_type == "Deposit":
+            balance += current.amount
+        else:
+            balance -= current.amount
+        current = current.next
+
+    return balance
+
+def searchByDate(head, search_date):
+    # Search transactions based on date
+    if head is None:
+        print("No transactions to search")
+        return
+
+    found = False
+    current = head
+    print(f"Searching for transactions on {search_date}")
+
+    while current is not None:
+        transaction_date = current.date.strftime("%Y-%m-%d")
+        if transaction_date == search_date:
+            found = True
+            print(f"Date: {transaction_date} | Type: {current.transaction_type} | Amount: ${current.amount}")
+        current = current.next
+
+    if not found:
+        print("No transactions found on that date.")
+
+
+# ==========================================
+# Main Menu Function
+# ==========================================
+def history():
+    head = None  # Head of linked list
+
+    while True:
+        print("\n====== Transaction Menu ======")
+        print("1. Deposit")
+        print("2. Withdrawal")
+        print("3. Show transaction history")
+        print("4. Search transactions by date")
+        print("5. Show current balance")
+        print("6. Undo latest operation")
+        print("7. Exit")
+
+        # Input validation
+        try:
+            choice = int(input("Choose an option (1-7): "))
+        except ValueError:
+            print("Please enter a valid number.")
+            continue
+
+        # Deposit option
+        if choice == 1:
+            amount = float(input("Enter amount to Deposit: "))
+            head = insertAtEnd(head, amount, "Deposit")
+
+            # Push last node to undo stack
+            curr = head
+            while curr.next:
+                curr = curr.next
+            push_to_undo_stack(curr)
+
+            print("Deposit successful!")
+
+        # Withdrawal option
+        elif choice == 2:
+            amount = float(input("Enter amount to Withdraw: "))
+            if calculateBalance(head) >= amount:
+                head = insertAtEnd(head, amount, "Withdrawal")
+
+                # Push last node to undo stack
+                curr = head
+                while curr.next:
+                    curr = curr.next
+                push_to_undo_stack(curr)
+
+                print("Withdrawal successful!")
+            else:
+                print("Not enough balance!")
+
+        # Show transaction history
+        elif choice == 3:
+            traverseList(head)
+
+        # Search transaction by date
+        elif choice == 4:
+            date_input = input("Enter date to search (YYYY-MM-DD): ")
+            searchByDate(head, date_input)
+
+        # Display current balance
+        elif choice == 5:
+            print(f"Current Balance: ${calculateBalance(head):.2f}")
+
+        # Undo latest transaction
+        elif choice == 6:
+            head = undo_latest_operation(head)
+
+        # Exit program
+        elif choice == 7:
+            print("Exiting program...")
+            break
+
+        else:
+            print("Invalid option. Please try again.")
+
+
+# ==========================================
+# Program Execution Starts Here
+# ==========================================
+history()
