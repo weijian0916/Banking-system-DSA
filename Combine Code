@@ -1,45 +1,75 @@
 import datetime
 
-# ==========================================
+# ==================================================
 # Node Class
-# Represents one transaction in the system
-# ==========================================
+# Each node represents ONE transaction
+# ==================================================
 class Node:
     def __init__(self, amount, transaction_type):
-        self.amount = amount                    # Transaction amount
+        self.amount = amount                      # Transaction amount
         self.transaction_type = transaction_type  # Deposit or Withdrawal
-        self.date = datetime.datetime.now()     # Transaction date & time
-        self.next = None                        # Pointer to next node
+        self.date = datetime.datetime.now()       # Date & time of transaction
+        self.next = None                          # Pointer to next node
 
 
-# ==========================================
+# ==================================================
 # Stack for Undo Operation
-# ==========================================
-undo_stack = []  # Stack to store latest transactions
+# Stack is implemented using Python list
+# ==================================================
+undo = []   # This list acts as a STACK
 
 def is_stack_empty():
-    # Check whether the undo stack is empty
-    return len(undo_stack) == 0
+    """
+    Check whether the undo stack is empty
+    Returns True if empty, False otherwise
+    """
+    return len(undo) == 0
 
-def push_to_undo_stack(node):
-    # Push the latest transaction node into the stack
-    undo_stack.append(node)
+def push_undo(transaction_node):
+    """
+    PUSH operation
+    Stores the latest transaction into the undo stack
+    """
+    undo.append(transaction_node)
 
-def undo_latest_operation(head):
-    # Undo the most recent transaction
+def pop_undo():
+    """
+    POP operation
+    Removes and returns the most recent transaction
+    """
     if is_stack_empty():
-        print("No transactions to undo!")
+        return None
+    return undo.pop()
+
+def peek_undo():
+    """
+    PEEK operation
+    Returns the most recent transaction WITHOUT removing it
+    """
+    if is_stack_empty():
+        return None
+    return undo[-1]
+
+
+# ==================================================
+# Undo Latest Transaction
+# ==================================================
+def undo_latest(head):
+    """
+    Undo the most recent transaction using stack POP
+    """
+    if is_stack_empty():
+        print("No action to undo!")
         return head
 
-    # Remove the last transaction from stack
-    last_node = undo_stack.pop()
-    print(f"Undoing {last_node.transaction_type} of ${last_node.amount}")
+    last_node = pop_undo()
+    print(f"Undo {last_node.transaction_type} of ${last_node.amount}")
 
-    # If only one node exists
+    # If only one transaction exists
     if head == last_node:
         return None
 
-    # Find the previous node and remove the last node
+    # Traverse linked list to find the node before last_node
     current = head
     while current.next is not None and current.next != last_node:
         current = current.next
@@ -50,18 +80,18 @@ def undo_latest_operation(head):
     return head
 
 
-# ==========================================
+# ==================================================
 # Linked List Operations
-# ==========================================
+# ==================================================
 def insertAtEnd(head, amount, transaction_type):
-    # Insert a new transaction at the end of linked list
+    """
+    Insert a new transaction node at the end of the linked list
+    """
     newNode = Node(amount, transaction_type)
 
-    # If list is empty
     if head is None:
         return newNode
 
-    # Traverse to the last node
     current = head
     while current.next is not None:
         current = current.next
@@ -70,19 +100,23 @@ def insertAtEnd(head, amount, transaction_type):
     return head
 
 def traverseList(head):
-    # Display all transaction records
+    """
+    Display all transaction records
+    """
     if head is None:
         print("No transaction yet")
         return
 
     current = head
     while current is not None:
-        date_str = current.date.strftime("%Y-%m-%d %H:%M:%S")
+        date_str = current.date.strftime("%Y-%m-%d")
         print(f"Date: {date_str} | Type: {current.transaction_type} | Amount: ${current.amount}")
         current = current.next
 
 def calculateBalance(head):
-    # Calculate current account balance
+    """
+    Calculate current account balance
+    """
     balance = 0
     current = head
 
@@ -96,7 +130,9 @@ def calculateBalance(head):
     return balance
 
 def searchByDate(head, search_date):
-    # Search transactions based on date
+    """
+    Search transactions based on date (YYYY-MM-DD)
+    """
     if head is None:
         print("No transactions to search")
         return
@@ -116,11 +152,11 @@ def searchByDate(head, search_date):
         print("No transactions found on that date.")
 
 
-# ==========================================
+# ==================================================
 # Main Menu Function
-# ==========================================
+# ==================================================
 def history():
-    head = None  # Head of linked list
+    head = None   # Head of linked list
 
     while True:
         print("\n====== Transaction Menu ======")
@@ -129,72 +165,79 @@ def history():
         print("3. Show transaction history")
         print("4. Search transactions by date")
         print("5. Show current balance")
-        print("6. Undo latest operation")
-        print("7. Exit")
+        print("6. Undo latest transaction ")
+        print("7. Peek next undo ")
+        print("8. Exit")
 
-        # Input validation
         try:
-            choice = int(input("Choose an option (1-7): "))
+            choice = int(input("Choose an option (1-8): "))
         except ValueError:
             print("Please enter a valid number.")
             continue
 
-        # Deposit option
+        # ------------------ Deposit ------------------
         if choice == 1:
             amount = float(input("Enter amount to Deposit: "))
             head = insertAtEnd(head, amount, "Deposit")
 
-            # Push last node to undo stack
+            # Push last transaction into undo stack
             curr = head
             while curr.next:
                 curr = curr.next
-            push_to_undo_stack(curr)
+            push_undo(curr)
 
             print("Deposit successful!")
 
-        # Withdrawal option
+        # ---------------- Withdrawal -----------------
         elif choice == 2:
             amount = float(input("Enter amount to Withdraw: "))
             if calculateBalance(head) >= amount:
                 head = insertAtEnd(head, amount, "Withdrawal")
 
-                # Push last node to undo stack
                 curr = head
                 while curr.next:
                     curr = curr.next
-                push_to_undo_stack(curr)
+                push_undo(curr)
 
                 print("Withdrawal successful!")
             else:
                 print("Not enough balance!")
 
-        # Show transaction history
+        # ------------ Show History -------------------
         elif choice == 3:
             traverseList(head)
 
-        # Search transaction by date
+        # ------------ Search by Date -----------------
         elif choice == 4:
-            date_input = input("Enter date to search (YYYY-MM-DD): ")
+            date_input = input("Enter date (YYYY-MM-DD): ")
             searchByDate(head, date_input)
 
-        # Display current balance
+        # ------------ Show Balance -------------------
         elif choice == 5:
             print(f"Current Balance: ${calculateBalance(head):.2f}")
 
-        # Undo latest transaction
+        # ------------ Undo (POP) ---------------------
         elif choice == 6:
-            head = undo_latest_operation(head)
+            head = undo_latest(head)
 
-        # Exit program
+        # ------------ Peek (PEEK) --------------------
         elif choice == 7:
+            top = peek_undo()
+            if top:
+                print(f"Next undo: {top.transaction_type} of ${top.amount}")
+            else:
+                print("Undo stack is empty.")
+
+        # ---------------- Exit -----------------------
+        elif choice == 8:
             print("Exiting program...")
             break
 
         else:
-            print("Invalid option. Please try again.")
+            print("Invalid option.")
 
 
-# ==========================================
-# Program Execution Starts Here
-# ==========================================
+# ==================================================
+# Program Execution
+# ==================================================
 history()
