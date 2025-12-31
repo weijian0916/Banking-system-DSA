@@ -1,1 +1,157 @@
+import datetime
 
+
+class Node:
+    def __init__(self, amount, transaction_type, date=None):
+        self.amount = amount
+        self.transaction_type = transaction_type
+        self.date = datetime.datetime.now()
+        self.next = None
+
+
+# UNDO AND STACK FUNCTION
+undo = []
+
+
+# check stack kosong bfr undo
+def is_stack_empty():
+    return len(undo) == 0
+
+
+def undostack(transaction_node):
+    undo.append(transaction_node) # insert new input (history)
+
+
+def undolatest(head):
+    # Guna is_stack_empty() so tak error kalau stack kosong
+    if is_stack_empty():
+        print("No action to undo!")
+        return head
+
+    last_node = undo.pop()
+    print(f"Undo {last_node.transaction_type} Action for ${last_node.amount}")
+
+    if head == last_node:
+        return None
+
+    current = head
+    while current.next is not None and current.next != last_node:
+        current = current.next
+
+    if current.next == last_node:
+        current.next = None
+
+    return head
+
+
+# FONG, WEIJIAN PUNYA CODING
+def traverseList(head):
+    current = head
+    if current is None:
+        print("No transaction yet")
+        return
+
+    while current is not None:
+        date_str = current.date.strftime("%Y-%m-%d")
+        print(f"Date: {date_str} | Type: {current.transaction_type} | Amount: ${current.amount}")
+        current = current.next
+
+
+def insertAtEnd(head, amount, transaction_type):
+    newNode = Node(amount, transaction_type)
+    if head is None:
+        return newNode
+    last = head
+    while last.next is not None:
+        last = last.next
+    last.next = newNode
+    return head
+
+
+def calculateBalance(head):
+    balance = 0
+    current = head
+    while current is not None:
+        if current.transaction_type == "Deposit":
+            balance += current.amount
+        else:
+            balance -= current.amount
+        current = current.next
+    return balance
+
+
+def searchByDate(head, search_date):
+    current = head
+    found = False
+    if current is None:
+        print("No transactions to search")
+        return
+    print(f"Searching for transactions on {search_date}")
+    while current is not None:
+        transaction_date = current.date.strftime("%Y-%m-%d")
+        if transaction_date == search_date:
+            found = True
+            print(f"Date: {transaction_date} | Type: {current.transaction_type} | Amount: ${current.amount}")
+        current = current.next
+    if not found:
+        print("No transactions found on that date.")
+
+
+def history():
+    head = None
+    while True:
+        print("\nTransaction Menu")
+        print("1. Deposit")
+        print("2. Withdrawal")
+        print("3. Show transaction history")
+        print("4. Search transactions by date")
+        print("5. Show current balance")
+        print("6. Undo latest operation")
+        print("7. Exit")
+
+        try:
+            choice = int(input("Choose an option (1-7): "))
+        except ValueError:
+            print("Please enter a valid number.")
+            continue
+
+        if choice == 1:
+            amount = float(input("Enter amount to Deposit: "))
+            head = insertAtEnd(head, amount, "Deposit")
+            curr = head
+            while curr.next: curr = curr.next
+            undostack(curr)
+            print("Deposit successful!")
+
+        elif choice == 2:
+            amount = float(input("Enter amount to Withdraw: "))
+            if calculateBalance(head) >= amount:
+                head = insertAtEnd(head, amount, "Withdrawal")
+                curr = head
+                while curr.next: curr = curr.next
+                undostack(curr)
+                print("Withdrawal successful!")
+            else:
+                print("Not enough money!")
+
+        elif choice == 3:
+            traverseList(head)
+
+        elif choice == 4:
+            date_input = input("Enter date to search (YYYY-MM-DD): ")
+            searchByDate(head, date_input)
+
+        elif choice == 5:
+            print(f"Current Balance: ${calculateBalance(head):.2f}")
+
+        elif choice == 6:
+            head = undolatest(head)
+
+        elif choice == 7:
+            print("Exiting...")
+            break
+        else:
+            print("Invalid option.")
+
+
+history()
